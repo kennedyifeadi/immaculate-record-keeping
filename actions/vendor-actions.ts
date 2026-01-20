@@ -1,3 +1,5 @@
+'use server'
+
 import dbConnect from '@/lib/db';
 import { Vendor } from '@/models/vendor';
 import { revalidatePath } from 'next/cache';
