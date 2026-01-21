@@ -1,4 +1,3 @@
-// @ts-expect-error: missing type declarations for CSS side-effect import
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import { Inter } from 'next/font/google';

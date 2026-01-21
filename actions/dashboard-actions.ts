@@ -46,13 +46,15 @@ export async function getDashboardStats() {
   .populate({ path: 'vendor', model: Vendor }) // <--- THE FIX
   .lean();
 
-  const chartData = yesterdaySales.map(s => {
-    if (!s.vendor) return null;
-    return {
-      name: (s.vendor as any).name,
-      amount: s.amount
-    };
-  }).filter(Boolean);
+  const chartData = yesterdaySales
+    .map(s => {
+      if (!s.vendor) return null;
+      return {
+        name: (s.vendor as any).name,
+        amount: s.amount
+      };
+    })
+    .filter((x): x is { name: string; amount: number } => x !== null);
 
   return {
     topVendor: sortedVendors[0] || { name: 'N/A', total: 0 },
