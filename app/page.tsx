@@ -23,7 +23,7 @@ export default async function Dashboard() {
       </div>
 
       {/* Welcome Card */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl shadow-blue-200">
+      <div className="bg-linear-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white shadow-xl shadow-blue-200">
         <h2 className="text-3xl font-bold mb-2">Welcome back, Franca! 👋</h2>
         <p className="text-blue-100 opacity-90 max-w-xl">
           It&apos;s really nice to have you here. You have a few pending logs from yesterday. 
@@ -78,7 +78,7 @@ export default async function Dashboard() {
       {/* Chart Section */}
       <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 mb-6">Yesterday&apos;s Sales Trends</h3>
-        <div className="h-[300px] w-full">
+        <div className="h-75 w-full">
            <DashboardChart data={chartData} />
         </div>
       </div>
