@@ -1,6 +1,6 @@
 import { getAnalyticsData } from '@/actions/analytics-actions';
 import { RevenueTrendChart, VendorRankingChart } from '@/components/analytics/Charts';
-import { TrendingUp, Wallet, Users, Calendar } from 'lucide-react';
+import { TrendingUp, Wallet, Users } from 'lucide-react';
 
 export default async function AnalyticsPage() {
   const { monthlyTrends, vendorRankings, kpis } = await getAnalyticsData();

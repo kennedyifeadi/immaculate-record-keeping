@@ -2,7 +2,6 @@
 
 import dbConnect from '@/lib/db';
 import { Sale } from '@/models/sale';
-import { Vendor } from '@/models/vendor';
 
 export async function getDashboardStats() {
   await dbConnect();

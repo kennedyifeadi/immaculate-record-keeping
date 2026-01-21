@@ -2,13 +2,11 @@
 
 import { useState, useTransition } from 'react';
 import { toggleVendorStatus } from '@/actions/vendor-actions';
-import { Search, UserX, UserCheck, Edit2, Calendar } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Search, UserX, UserCheck, Calendar } from 'lucide-react';
 
 export default function VendorTable({ vendors }: { vendors: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
 
   // Filter vendors based on search
   const filteredVendors = vendors.filter(v => 
