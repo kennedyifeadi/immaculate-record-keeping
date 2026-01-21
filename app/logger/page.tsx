@@ -1,4 +1,3 @@
-// app/logger/page.tsx
 import { getVendors } from '@/actions/vendor-actions';
 import { getMonthlySales } from '@/actions/sale-actions';
 import { getDaysInMonth } from '@/lib/date-helpers';
@@ -9,14 +8,21 @@ import { Plus } from 'lucide-react';
 export default async function LoggerPage({
   searchParams,
 }: {
-  searchParams: { month?: string; year?: string };
+  // 1. UPDATE TYPE: searchParams is now a Promise in Next.js 15
+  searchParams: Promise<{ month?: string; year?: string }>;
 }) {
+  // 2. AWAIT THE PARAMS: You must await the promise before reading properties
+  const params = await searchParams;
+
   const today = new Date();
-  const currentMonth = searchParams.month ? parseInt(searchParams.month) : today.getMonth();
-  const currentYear = searchParams.year ? parseInt(searchParams.year) : today.getFullYear();
+  
+  // 3. USE 'params' OBJECT: Access .month and .year from the awaited variable
+  const currentMonth = params.month ? parseInt(params.month) : today.getMonth();
+  const currentYear = params.year ? parseInt(params.year) : today.getFullYear();
   
   const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
 
+  // Fetch data in parallel
   const [vendors, salesMap] = await Promise.all([
     getVendors(),
     getMonthlySales(currentYear, currentMonth),
@@ -25,10 +31,10 @@ export default async function LoggerPage({
   const daysInMonth = getDaysInMonth(currentMonth, currentYear);
 
   return (
-    // FIX 1: Use h-[calc(100vh-theme(spacing.16))] to fill screen minus padding
+    // Layout Fix: Using calc to fill screen minus padding (header + padding)
     <div className="flex flex-col h-[calc(100vh-6rem)] space-y-4">
       
-      {/* HEADER: Prevents this from scrolling */}
+      {/* HEADER: Fixed at the top, does not scroll */}
       <div className="flex justify-between items-center shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Daily Logger</h1>
@@ -45,9 +51,9 @@ export default async function LoggerPage({
         </Link>
       </div>
 
-      {/* TABLE CONTAINER: Restrict overflow here */}
+      {/* TABLE CONTAINER: Restrict overflow to this box only */}
       <div className="flex-1 border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden relative">
-        {/* Absolute positioning ensures the scroll area fills the parent perfectly */}
+        {/* Absolute positioning forces the scroll area to fill the parent container */}
         <div className="absolute inset-0 overflow-auto">
           <SalesGrid 
             vendors={vendors} 

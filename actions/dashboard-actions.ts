@@ -2,6 +2,7 @@
 
 import dbConnect from '@/lib/db';
 import { Sale } from '@/models/sale';
+import { Vendor } from '@/models/vendor'; // Import is required
 
 export async function getDashboardStats() {
   await dbConnect();
@@ -10,16 +11,23 @@ export async function getDashboardStats() {
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
-  // 1. Get Totals for this Month
-  const sales = await Sale.find({ month: currentMonth, year: currentYear }).populate('vendor');
+  // FIX: Pass the actual Vendor model object into populate
+  // instead of just the string 'vendor'.
+  const sales = await Sale.find({ month: currentMonth, year: currentYear })
+    .populate({ path: 'vendor', model: Vendor }); // <--- THE FIX
   
   const vendorTotals: Record<string, { name: string, total: number }> = {};
   
   sales.forEach(sale => {
-    const vendor = sale.vendor as any;
-    const vId = vendor._id.toString();
+    // Safety check: if a vendor was deleted, this might be null
+    if (!sale.vendor) return; 
+
+    // We cast to 'any' because populated fields are sometimes tricky in TS
+    const vendorName = (sale.vendor as any).name;
+    const vId = (sale.vendor as any)._id.toString();
+
     if (!vendorTotals[vId]) {
-      vendorTotals[vId] = { name: vendor.name, total: 0 };
+      vendorTotals[vId] = { name: vendorName, total: 0 };
     }
     vendorTotals[vId].total += sale.amount;
   });
@@ -31,14 +39,20 @@ export async function getDashboardStats() {
   yesterday.setDate(yesterday.getDate() - 1);
   yesterday.setHours(0,0,0,0);
   
+  // Apply the same fix here for yesterday's sales
   const yesterdaySales = await Sale.find({ 
     date: yesterday 
-  }).populate('vendor').lean();
+  })
+  .populate({ path: 'vendor', model: Vendor }) // <--- THE FIX
+  .lean();
 
-  const chartData = yesterdaySales.map(s => ({
-    name: (s.vendor as any).name,
-    amount: s.amount
-  }));
+  const chartData = yesterdaySales.map(s => {
+    if (!s.vendor) return null;
+    return {
+      name: (s.vendor as any).name,
+      amount: s.amount
+    };
+  }).filter(Boolean);
 
   return {
     topVendor: sortedVendors[0] || { name: 'N/A', total: 0 },
