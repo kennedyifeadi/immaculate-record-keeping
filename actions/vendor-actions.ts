@@ -44,3 +44,44 @@ export async function createVendor(name: string, joinedAtStr: string) {
     return { success: false, error: 'Failed to create vendor' };
   }
 }
+
+// 3. Toggle Vendor Status (Active/Inactive)
+export async function toggleVendorStatus(vendorId: string, currentStatus: boolean) {
+  await dbConnect();
+  try {
+    await Vendor.findByIdAndUpdate(vendorId, { isActive: !currentStatus });
+    revalidatePath('/vendors'); 
+    revalidatePath('/logger'); // Also update logger so they disappear/reappear
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to update status' };
+  }
+}
+
+// 4. Update Vendor Details
+export async function updateVendor(vendorId: string, data: { name: string }) {
+  await dbConnect();
+  try {
+    await Vendor.findByIdAndUpdate(vendorId, { name: data.name });
+    revalidatePath('/vendors');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: 'Failed to update vendor' };
+  }
+}
+
+// 5. Fetch ALL vendors (Active & Inactive) for the admin list
+export async function getAllVendorsAdmin() {
+  await dbConnect();
+  try {
+    const vendors = await Vendor.find({}).sort({ createdAt: -1 }).lean();
+    return vendors.map((v) => ({
+      ...v,
+      _id: v._id.toString(),
+      joinedDate: v.joinedAt.toISOString(),
+    //   createdAt: v.createdAt.toISOString(),
+    }));
+  } catch (error) {
+    return [];
+  }
+}

@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react';
+import { useTransition } from 'react';
 import { logSale } from '@/actions/sale-actions';
 import { formatDateForHeader, isDateBeforeJoin } from '@/lib/date-helpers';
 import { useRouter } from 'next/navigation';
+import { clsx } from 'clsx';
 
 interface Props {
   vendors: any[];
   daysInMonth: Date[];
-  salesMap: Record<string, number>; // Format: "vendorId-day": amount
+  salesMap: Record<string, number>;
   month: number;
   year: number;
 }
@@ -17,7 +18,6 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // Helper to calculate total for a specific vendor row
   const getVendorTotal = (vendorId: string) => {
     let total = 0;
     daysInMonth.forEach(day => {
@@ -28,42 +28,49 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
     return total;
   };
 
-  // The function that saves data when she leaves a cell
   const handleSave = async (vendorId: string, date: Date, val: string) => {
     const amount = parseFloat(val);
-    if (isNaN(amount)) return; // Don't save if empty or text
+    if (isNaN(amount) && val !== '') return; 
 
-    // Optimistic UI: We could update state locally, but for now we trust the server revalidate
-    // We wrap this in startTransition so Next.js knows it's a background update
     startTransition(async () => {
-      await logSale(vendorId, date.toISOString(), amount);
-      // Optional: router.refresh() if you want to see updated totals immediately
+      await logSale(vendorId, date.toISOString(), isNaN(amount) ? 0 : amount);
       router.refresh(); 
     });
   };
 
   return (
-    <table className="w-full text-sm text-left border-collapse">
-      {/* 1. THE HEADER ROW (Dates) */}
-      <thead className="bg-gray-100 text-gray-700 font-bold sticky top-0 z-10 shadow-sm">
+    <table className="min-w-max w-full text-sm text-left border-collapse">
+      {/* 1. HEADER ROW */}
+      <thead className="bg-slate-50 text-slate-500 font-semibold uppercase text-xs tracking-wider sticky top-0 z-30 shadow-sm">
         <tr>
-          <th className="p-3 border sticky left-0 bg-gray-100 min-w-[150px] z-20">Vendor Name</th>
+          {/* STICKY VENDOR HEADER (Top Left Corner) */}
+          {/* z-index must be higher than everything else (40 or 50) */}
+          <th className="p-3 border-b border-r border-slate-200 sticky left-0 top-0 z-50 bg-slate-50 min-w-[200px] text-left shadow-[4px_0_5px_-2px_rgba(0,0,0,0.05)]">
+            Vendor Name
+          </th>
+          
+          {/* Date Headers */}
           {daysInMonth.map((day) => (
-            <th key={day.toISOString()} className="p-2 border min-w-[80px] text-center whitespace-nowrap">
+            <th key={day.toISOString()} className="p-2 border-b border-r border-slate-200 min-w-[80px] text-center whitespace-nowrap bg-slate-50">
               {formatDateForHeader(day)}
             </th>
           ))}
-          <th className="p-3 border bg-blue-50 min-w-[100px] text-center">Total</th>
+          
+          {/* Total Header */}
+          <th className="p-3 border-b border-slate-200 bg-blue-50/50 text-blue-700 min-w-[100px] text-center border-l sticky right-0 z-30">
+            Total
+          </th>
         </tr>
       </thead>
 
-      {/* 2. THE BODY (Vendors) */}
-      <tbody>
+      {/* 2. BODY */}
+      <tbody className="divide-y divide-slate-100">
         {vendors.map((vendor) => (
-          <tr key={vendor._id} className="hover:bg-gray-50 group">
+          <tr key={vendor._id} className="group hover:bg-slate-50/50 transition-colors">
             
-            {/* Vendor Name Column (Sticky Left) */}
-            <td className="p-3 border font-medium bg-white group-hover:bg-gray-50 sticky left-0 z-10">
+            {/* STICKY VENDOR NAME (Left Column) */}
+            {/* Must have bg-white to hide scrolling content behind it */}
+            <td className="p-3 border-r border-slate-200 font-medium text-slate-700 sticky left-0 z-20 bg-white group-hover:bg-slate-50 shadow-[4px_0_5px_-2px_rgba(0,0,0,0.05)]">
               {vendor.name}
             </td>
 
@@ -71,24 +78,30 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
             {daysInMonth.map((day) => {
               const dayNum = day.getDate();
               const key = `${vendor._id}-${dayNum}`;
-              const val = salesMap[key] || ''; // Get value or empty string
-
-              // THE LOGIC: Check if this day is before they joined
+              const val = salesMap[key] || '';
               const isLocked = isDateBeforeJoin(day, vendor.joinedDate);
 
               if (isLocked) {
-                // RENDER BLACK BOX
-                return <td key={day.toISOString()} className="border bg-gray-800 cursor-not-allowed"></td>;
+                return (
+                  <td 
+                    key={day.toISOString()} 
+                    className="border-r border-slate-200 bg-slate-800 cursor-not-allowed min-w-[80px]"
+                    title="Vendor had not joined yet"
+                  />
+                );
               }
 
-              // RENDER INPUT BOX
               return (
-                <td key={day.toISOString()} className="border p-0 relative">
+                <td key={day.toISOString()} className="border-r border-slate-200 p-0 relative h-10 min-w-[80px]">
                   <input
                     type="number"
-                    defaultValue={val} // Use defaultValue for performance (uncontrolled input)
+                    defaultValue={val}
                     onBlur={(e) => handleSave(vendor._id, day, e.target.value)}
-                    className="w-full h-full p-2 text-center outline-none focus:bg-blue-50 focus:ring-2 focus:ring-blue-500 transition-all"
+                    className={clsx(
+                      "w-full h-full text-center outline-none transition-all bg-transparent",
+                      "text-slate-700 placeholder:text-slate-300",
+                      "focus:bg-blue-50 focus:ring-2 focus:ring-inset focus:ring-blue-500/50"
+                    )}
                     placeholder="-"
                   />
                 </td>
@@ -96,7 +109,7 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
             })}
 
             {/* Total Column */}
-            <td className="p-3 border font-bold text-center bg-blue-50">
+            <td className="p-3 border-l border-slate-200 font-bold text-center text-slate-700 bg-blue-50/30 min-w-[100px]">
               ₦{getVendorTotal(vendor._id).toLocaleString()}
             </td>
           </tr>
