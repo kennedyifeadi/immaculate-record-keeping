@@ -34,7 +34,7 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
 
     startTransition(async () => {
       await logSale(vendorId, date.toISOString(), isNaN(amount) ? 0 : amount);
-      router.refresh(); 
+      await router.refresh();
     });
   };
 

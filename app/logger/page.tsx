@@ -4,7 +4,7 @@ import { getDaysInMonth } from '@/lib/date-helpers';
 import SalesGrid from '@/components/SalesGrid';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-
+export const dynamic = 'force-dynamic';
 export default async function LoggerPage({
   searchParams,
 }: {

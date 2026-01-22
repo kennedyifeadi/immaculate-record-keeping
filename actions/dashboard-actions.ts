@@ -2,7 +2,7 @@
 
 import dbConnect from '@/lib/db';
 import { Sale } from '@/models/sale';
-import { Vendor } from '@/models/vendor'; // Import is required
+import { Vendor } from '@/models/vendor'; // Keep this import!
 
 export async function getDashboardStats() {
   await dbConnect();
@@ -11,54 +11,84 @@ export async function getDashboardStats() {
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
-  // FIX: Pass the actual Vendor model object into populate
-  // instead of just the string 'vendor'.
-  const sales = await Sale.find({ month: currentMonth, year: currentYear })
-    .populate({ path: 'vendor', model: Vendor }); // <--- THE FIX
-  
-  const vendorTotals: Record<string, { name: string, total: number }> = {};
-  
-  sales.forEach(sale => {
-    // Safety check: if a vendor was deleted, this might be null
-    if (!sale.vendor) return; 
+  // 1. ADVANCED AGGREGATION to handle Duplicates
+  const vendorStats = await Sale.aggregate([
+    // A. Filter for current month
+    { $match: { month: currentMonth, year: currentYear } },
 
-    // We cast to 'any' because populated fields are sometimes tricky in TS
-    const vendorName = (sale.vendor as any).name;
-    const vId = (sale.vendor as any)._id.toString();
+    // B. Deduplicate: Group by Vendor + Day first
+    // This solves the "Two sales in one day" bug by taking the LAST recorded amount
+    {
+      $group: {
+        _id: { vendor: "$vendor", day: "$day" },
+        amount: { $last: "$amount" } // "Last Write Wins" logic
+      }
+    },
 
-    if (!vendorTotals[vId]) {
-      vendorTotals[vId] = { name: vendorName, total: 0 };
-    }
-    vendorTotals[vId].total += sale.amount;
-  });
+    // C. Sum: Now group by Vendor to get the true monthly total
+    {
+      $group: {
+        _id: "$_id.vendor",
+        total: { $sum: "$amount" }
+      }
+    },
 
-  const sortedVendors = Object.values(vendorTotals).sort((a, b) => b.total - a.total);
+    // D. Populate Vendor Details
+    {
+      $lookup: {
+        from: "vendors",
+        localField: "_id",
+        foreignField: "_id",
+        as: "vendorInfo"
+      }
+    },
+    { $unwind: "$vendorInfo" }, // Flatten the array
 
-  // 2. Get Yesterday's Sales Data for Chart
+    // E. Sort Highest to Lowest
+    { $sort: { total: -1 } }
+  ]);
+
+  // 2. Map results to your structure
+  // Since we sorted in the DB, the first item is Top, last is Bottom
+  const topVendor = vendorStats[0] 
+    ? { name: vendorStats[0].vendorInfo.name, total: vendorStats[0].total } 
+    : { name: 'N/A', total: 0 };
+
+  const bottomVendor = vendorStats.length > 0
+    ? { 
+        name: vendorStats[vendorStats.length - 1].vendorInfo.name, 
+        total: vendorStats[vendorStats.length - 1].total 
+      }
+    : { name: 'N/A', total: 0 };
+
+  // 3. Get Yesterday's Data (Keep existing logic or update to aggregate)
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(0,0,0,0);
-  
-  // Apply the same fix here for yesterday's sales
-  const yesterdaySales = await Sale.find({ 
-    date: yesterday 
-  })
-  .populate({ path: 'vendor', model: Vendor }) // <--- THE FIX
-  .lean();
+  const yesterdayDay = yesterday.getDate();
 
-  const chartData = yesterdaySales
-    .map(s => {
-      if (!s.vendor) return null;
-      return {
-        name: (s.vendor as any).name,
-        amount: s.amount
-      };
-    })
-    .filter((x): x is { name: string; amount: number } => x !== null);
+  const yesterdaySales = await Sale.aggregate([
+    { $match: { month: currentMonth, year: currentYear, day: yesterdayDay } },
+    {
+       $group: {
+         _id: "$vendor",
+         amount: { $last: "$amount" } // Deduplicate yesterday too
+       }
+    },
+    {
+      $lookup: {
+        from: "vendors",
+        localField: "_id",
+        foreignField: "_id",
+        as: "vendorInfo"
+      }
+    },
+    { $unwind: "$vendorInfo" }
+  ]);
 
-  return {
-    topVendor: sortedVendors[0] || { name: 'N/A', total: 0 },
-    bottomVendor: sortedVendors[sortedVendors.length - 1] || { name: 'N/A', total: 0 },
-    chartData
-  };
+  const chartData = yesterdaySales.map(s => ({
+    name: s.vendorInfo.name,
+    amount: s.amount
+  }));
+
+  return { topVendor, bottomVendor, chartData };
 }

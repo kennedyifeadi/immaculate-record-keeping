@@ -17,7 +17,7 @@ export async function getVendors() {
       ...v,
       _id: v._id.toString(),
       joinedAt: v.joinedAt.toISOString(),
-    //   createdAt: v.createdAt.toISOString(),
+      //   createdAt: v.createdAt.toISOString(),
     }));
   } catch (error) {
     console.error('Failed to fetch vendors:', error);
@@ -37,7 +37,9 @@ export async function createVendor(name: string, joinedAtStr: string) {
     });
 
     // Refresh the dashboard so the new vendor appears immediately
-    revalidatePath('/'); 
+    revalidatePath('/');
+    revalidatePath('/logger');
+    revalidatePath('/analytics');
     return { success: true };
   } catch (error) {
     console.error('Failed to create vendor:', error);
@@ -50,7 +52,7 @@ export async function toggleVendorStatus(vendorId: string, currentStatus: boolea
   await dbConnect();
   try {
     await Vendor.findByIdAndUpdate(vendorId, { isActive: !currentStatus });
-    revalidatePath('/vendors'); 
+    revalidatePath('/vendors');
     revalidatePath('/logger'); // Also update logger so they disappear/reappear
     return { success: true };
   } catch (error) {
@@ -79,9 +81,10 @@ export async function getAllVendorsAdmin() {
       ...v,
       _id: v._id.toString(),
       joinedDate: v.joinedAt.toISOString(),
-    //   createdAt: v.createdAt.toISOString(),
+      //   createdAt: v.createdAt.toISOString(),
     }));
   } catch (error) {
     return [];
   }
 }
+

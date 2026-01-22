@@ -3,39 +3,42 @@
 import dbConnect from '@/lib/db';
 import { Sale } from '@/models/sale';
 
-// 1. Log or Update a Sale
+// 1. Log or Update a Sale (Strictly One Per Day)
 export async function logSale(
   vendorId: string, 
   dateStr: string, 
   amount: number
 ) {
   await dbConnect();
-
-  const date = new Date(dateStr);
+  const dateObj = new Date(dateStr);
   
+  // Extract strict date components
+  const day = dateObj.getDate();
+  const month = dateObj.getMonth();
+  const year = dateObj.getFullYear();
+
   try {
-    // This query finds a sale for THIS vendor on THIS specific date
+    // FIX: Find by Day/Month/Year instead of exact Date timestamp.
+    // This ensures we update the existing entry for "Jan 1st" instead of creating a new one
+    // just because the time is slightly different.
     await Sale.findOneAndUpdate(
       { 
         vendor: vendorId, 
-        date: date 
+        day: day,
+        month: month,
+        year: year
       },
       {
         amount: amount,
-        day: date.getDate(),
-        month: date.getMonth(), // 0 = Jan, 1 = Feb
-        year: date.getFullYear(),
+        date: dateObj, // We still save the full date for reference
       },
       { 
-        upsert: true, // Create if it doesn't exist
+        upsert: true, 
         new: true,    
         setDefaultsOnInsert: true 
       }
     );
 
-    // We do NOT revalidatePath here. 
-    // Why? Because refreshing the whole page every time she types one number 
-    // would make the grid laggy. We trust the Client State for this.
     return { success: true };
   } catch (error) {
     console.error('Failed to log sale:', error);
@@ -43,26 +46,21 @@ export async function logSale(
   }
 }
 
-// 2. Fetch Sales for a Specific Month
+// 2. Fetch Sales (Keep existing getMonthlySales logic)
 export async function getMonthlySales(year: number, month: number) {
   await dbConnect();
 
   try {
     const sales = await Sale.find({ year, month }).lean();
-
-    // We transform the array into a Dictionary (Map)
-    // Key format: "vendorID-day" (e.g., "65f2a...-15")
-    // This allows the Grid to find values instantly without searching arrays.
     const salesMap: Record<string, number> = {};
 
     sales.forEach((sale) => {
       const key = `${sale.vendor.toString()}-${sale.day}`;
-      salesMap[key] = sale.amount;
+      salesMap[key] = sale.amount; 
     });
 
     return salesMap;
   } catch (error) {
-    console.error('Failed to get monthly sales:', error);
     return {};
   }
 }

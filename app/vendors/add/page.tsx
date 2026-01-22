@@ -28,7 +28,7 @@ export default function AddVendorPage() {
       
       if (result.success) {
         // Redirect back to the dashboard on success
-        router.push('/'); 
+        router.push('/logger'); 
       } else {
         setError(result.error || 'Something went wrong');
       }
