@@ -40,6 +40,7 @@ export async function createVendor(name: string, joinedAtStr: string) {
     revalidatePath('/');
     revalidatePath('/logger');
     revalidatePath('/analytics');
+    revalidatePath('/vendors');
     return { success: true };
   } catch (error) {
     console.error('Failed to create vendor:', error);

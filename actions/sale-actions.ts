@@ -2,6 +2,7 @@
 
 import dbConnect from '@/lib/db';
 import { Sale } from '@/models/sale';
+import { revalidatePath } from 'next/cache';
 
 // 1. Log or Update a Sale (Strictly One Per Day)
 export async function logSale(
@@ -38,6 +39,16 @@ export async function logSale(
         setDefaultsOnInsert: true 
       }
     );
+
+    // Revalidate pages that depend on sales data so UI shows fresh totals
+    try {
+      revalidatePath('/');
+      revalidatePath('/analytics');
+      revalidatePath('/logger');
+      revalidatePath('/vendors');
+    } catch (e) {
+      // revalidatePath can throw during tests or non-Next environments; ignore silently
+    }
 
     return { success: true };
   } catch (error) {

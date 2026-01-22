@@ -1,8 +1,9 @@
 // app/page.tsx
+export const dynamic = 'force-dynamic';
 import { getDashboardStats } from '@/actions/dashboard-actions';
 import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
 import DashboardChart from '@/components/analytics/DashboardChart'; // We will build this next
-export const dynamic = 'force-dynamic';
+
 export default async function Dashboard() {
   const { topVendor, bottomVendor, chartData } = await getDashboardStats();
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });

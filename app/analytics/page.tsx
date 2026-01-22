@@ -1,7 +1,8 @@
+export const dynamic = 'force-dynamic';
 import { getAnalyticsData } from '@/actions/analytics-actions';
 import { RevenueTrendChart, VendorRankingChart } from '@/components/analytics/Charts';
 import { TrendingUp, Wallet, Users } from 'lucide-react';
-export const dynamic = 'force-dynamic';
+
 export default async function AnalyticsPage() {
   const { monthlyTrends, vendorRankings, kpis } = await getAnalyticsData();
 
