@@ -6,13 +6,13 @@ import { revalidatePath } from 'next/cache';
 
 // 1. Log or Update a Sale (Strictly One Per Day)
 export async function logSale(
-  vendorId: string, 
-  dateStr: string, 
+  vendorId: string,
+  dateStr: string,
   amount: number
 ) {
   await dbConnect();
   const dateObj = new Date(dateStr);
-  
+
   // Extract strict date components
   const day = dateObj.getDate();
   const month = dateObj.getMonth();
@@ -23,8 +23,8 @@ export async function logSale(
     // This ensures we update the existing entry for "Jan 1st" instead of creating a new one
     // just because the time is slightly different.
     await Sale.findOneAndUpdate(
-      { 
-        vendor: vendorId, 
+      {
+        vendor: vendorId,
         day: day,
         month: month,
         year: year
@@ -33,10 +33,10 @@ export async function logSale(
         amount: amount,
         date: dateObj, // We still save the full date for reference
       },
-      { 
-        upsert: true, 
-        new: true,    
-        setDefaultsOnInsert: true 
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true
       }
     );
 
@@ -46,6 +46,7 @@ export async function logSale(
       revalidatePath('/analytics');
       revalidatePath('/logger');
       revalidatePath('/vendors');
+      revalidatePath('/monthly', 'layout'); // Update all monthly pages
     } catch (e) {
       // revalidatePath can throw during tests or non-Next environments; ignore silently
     }
@@ -67,11 +68,36 @@ export async function getMonthlySales(year: number, month: number) {
 
     sales.forEach((sale) => {
       const key = `${sale.vendor.toString()}-${sale.day}`;
-      salesMap[key] = sale.amount; 
+      salesMap[key] = sale.amount;
     });
 
     return salesMap;
   } catch (error) {
     return {};
+  }
+}
+
+// 3. Get all months that have data
+export async function getAvailableMonths() {
+  await dbConnect();
+  try {
+    // Aggregation to find distinct year/month combinations
+    // Returns [{ _id: { year: 2024, month: 0 } }, ... ]
+    const result = await Sale.aggregate([
+      {
+        $group: {
+          _id: { year: "$year", month: "$month" }
+        }
+      },
+      { $sort: { "_id.year": -1, "_id.month": -1 } } // Sort newest first
+    ]);
+
+    return result.map((item: any) => ({
+      year: item._id.year,
+      month: item._id.month
+    }));
+  } catch (error) {
+    console.error("Failed to fetch available months:", error);
+    return [];
   }
 }

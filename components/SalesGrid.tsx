@@ -12,9 +12,10 @@ interface Props {
   salesMap: Record<string, number>;
   month: number;
   year: number;
+  rankings?: Record<string, number>; // value is the rank (1, 2, 3...)
 }
 
-export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year }: Props) {
+export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year, rankings }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -30,7 +31,7 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
 
   const handleSave = async (vendorId: string, date: Date, val: string) => {
     const amount = parseFloat(val);
-    if (isNaN(amount) && val !== '') return; 
+    if (isNaN(amount) && val !== '') return;
 
     startTransition(async () => {
       await logSale(vendorId, date.toISOString(), isNaN(amount) ? 0 : amount);
@@ -48,14 +49,14 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
           <th className="p-3 border-b border-r border-slate-200 sticky left-0 top-0 z-50 bg-slate-50 min-w-[200px] text-left shadow-[4px_0_5px_-2px_rgba(0,0,0,0.05)]">
             Vendor Name
           </th>
-          
+
           {/* Date Headers */}
           {daysInMonth.map((day) => (
             <th key={day.toISOString()} className="p-2 border-b border-r border-slate-200 min-w-[80px] text-center whitespace-nowrap bg-slate-50">
               {formatDateForHeader(day)}
             </th>
           ))}
-          
+
           {/* Total Header */}
           <th className="p-3 border-b border-slate-200 bg-blue-50/50 text-blue-700 min-w-[100px] text-center border-l sticky right-0 z-30">
             Total
@@ -67,10 +68,24 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
       <tbody className="divide-y divide-slate-100">
         {vendors.map((vendor) => (
           <tr key={vendor._id} className="group hover:bg-slate-50/50 transition-colors">
-            
+
             {/* STICKY VENDOR NAME (Left Column) */}
             {/* Must have bg-white to hide scrolling content behind it */}
             <td className="p-3 border-r border-slate-200 font-medium text-slate-700 sticky left-0 z-20 bg-white group-hover:bg-slate-50 shadow-[4px_0_5px_-2px_rgba(0,0,0,0.05)]">
+              {rankings && rankings[vendor._id] && (
+                <span className={clsx(
+                  "mr-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full min-w-[2rem]",
+                  rankings[vendor._id] === 1 ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
+                    rankings[vendor._id] === 2 ? "bg-slate-100 text-slate-700 border border-slate-200" :
+                      rankings[vendor._id] === 3 ? "bg-orange-100 text-orange-800 border border-orange-200" :
+                        "bg-slate-50 text-slate-500"
+                )}>
+                  {rankings[vendor._id] === 1 ? '🥇 1' :
+                    rankings[vendor._id] === 2 ? '🥈 2' :
+                      rankings[vendor._id] === 3 ? '🥉 3' :
+                        `#${rankings[vendor._id]}`}
+                </span>
+              )}
               {vendor.name}
             </td>
 
@@ -83,8 +98,8 @@ export default function SalesGrid({ vendors, daysInMonth, salesMap, month, year 
 
               if (isLocked) {
                 return (
-                  <td 
-                    key={day.toISOString()} 
+                  <td
+                    key={day.toISOString()}
                     className="border-r border-slate-200 bg-slate-800 cursor-not-allowed min-w-[80px]"
                     title="Vendor had not joined yet"
                   />
