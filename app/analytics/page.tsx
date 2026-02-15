@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { getAnalyticsData } from '@/actions/analytics-actions';
 import { RevenueTrendChart, VendorRankingChart } from '@/components/analytics/Charts';
-import { TrendingUp, Wallet, Users } from 'lucide-react';
+import { TrendingUp, Wallet, Users, Calendar } from 'lucide-react';
 
 export default async function AnalyticsPage() {
   const { monthlyTrends, vendorRankings, kpis } = await getAnalyticsData();
@@ -16,21 +16,34 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* 2. KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card 1: Total Revenue */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Card 1: Total Sales */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-blue-100 text-blue-600 rounded-lg">
             <Wallet size={24} />
           </div>
           <div>
-            <p className="text-slate-500 text-sm font-medium">Total Revenue (YTD)</p>
+            <p className="text-slate-500 text-sm font-medium">Total Sales (YTD)</p>
             <h3 className="text-2xl font-bold text-slate-800">
               ₦{kpis.totalRevenue.toLocaleString()}
             </h3>
           </div>
         </div>
 
-        {/* Card 2: Best Month */}
+        {/* Card 2: Current Month Sales */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg">
+            <Calendar size={24} />
+          </div>
+          <div>
+            <p className="text-slate-500 text-sm font-medium">Current Month Sales</p>
+            <h3 className="text-2xl font-bold text-slate-800">
+              ₦{kpis.currentMonthSales.toLocaleString()}
+            </h3>
+          </div>
+        </div>
+
+        {/* Card 3: Best Month */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-green-100 text-green-600 rounded-lg">
             <TrendingUp size={24} />
@@ -43,7 +56,7 @@ export default async function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Card 3: Active Vendors */}
+        {/* Card 4: Active Vendors */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-purple-100 text-purple-600 rounded-lg">
             <Users size={24} />
@@ -63,7 +76,7 @@ export default async function AnalyticsPage() {
         {/* Revenue Trend */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
           <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Revenue Growth</h3>
+            <h3 className="text-lg font-bold text-slate-800">Sales Growth</h3>
             <p className="text-sm text-slate-400">Monthly sales performance</p>
           </div>
           <div className="h-[300px]">

@@ -29,7 +29,7 @@ export function RevenueTrendChart({ data }: { data: any[] }) {
           contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
           formatter={(value?: number) => [
             value === undefined ? '₦0' : `₦${value.toLocaleString()}`,
-            'Revenue' as const
+            'Sales' as const
           ]}
         />
         <Line 

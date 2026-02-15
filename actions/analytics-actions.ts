@@ -47,6 +47,10 @@ export async function getAnalyticsData() {
   
   const bestMonth = monthlyTrends.reduce((max, curr) => curr.total > max.total ? curr : max, { name: '-', total: 0 });
 
+  // Get current month sales
+  const currentMonthIndex = new Date().getMonth(); // 0-11
+  const currentMonthSales = monthlyTrends[currentMonthIndex]?.total || 0;
+
   return {
     monthlyTrends,
     vendorRankings: vendorAgg, // Now this is a plain list of { name, total }
@@ -54,7 +58,8 @@ export async function getAnalyticsData() {
       totalRevenue,
       vendorCount: activeVendorsCount,
       bestMonthName: bestMonth.name,
-      year: currentYear
+      year: currentYear,
+      currentMonthSales
     }
   };
 }

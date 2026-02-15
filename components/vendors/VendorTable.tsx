@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useTransition } from 'react';
-import { toggleVendorStatus } from '@/actions/vendor-actions';
-import { Search, UserX, UserCheck, Calendar } from 'lucide-react';
+import { toggleVendorStatus, updateVendor } from '@/actions/vendor-actions';
+import { Search, UserX, UserCheck, Calendar, Pencil, X } from 'lucide-react';
 
 export default function VendorTable({ vendors }: { vendors: any[] }) {
   const [searchTerm, setSearchTerm] = useState('');
+
   const [isPending, startTransition] = useTransition();
+  const [editingVendor, setEditingVendor] = useState<any | null>(null);
+  const [newName, setNewName] = useState('');
 
   // Filter vendors based on search
   const filteredVendors = vendors.filter(v => 
@@ -20,6 +23,24 @@ export default function VendorTable({ vendors }: { vendors: any[] }) {
 
     startTransition(async () => {
       await toggleVendorStatus(id, currentStatus);
+    });
+  };
+
+  const handleEditClick = (vendor: any) => {
+    setEditingVendor(vendor);
+    setNewName(vendor.name);
+  };
+
+  const handleUpdate = () => {
+    if (!editingVendor || !newName.trim()) return;
+    
+    startTransition(async () => {
+      const res = await updateVendor(editingVendor._id, { name: newName });
+      if (res.success) {
+        setEditingVendor(null);
+      } else {
+        alert("Failed to update vendor");
+      }
     });
   };
 
@@ -90,18 +111,28 @@ export default function VendorTable({ vendors }: { vendors: any[] }) {
 
                   {/* Actions */}
                   <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => handleToggleStatus(vendor._id, vendor.isActive)}
-                      disabled={isPending}
-                      className={`p-2 rounded-lg transition-colors ${
-                        vendor.isActive 
-                          ? 'text-red-600 hover:bg-red-50' 
-                          : 'text-green-600 hover:bg-green-50'
-                      }`}
-                      title={vendor.isActive ? "Deactivate Vendor" : "Activate Vendor"}
-                    >
-                      {vendor.isActive ? <UserX size={18} /> : <UserCheck size={18} />}
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={() => handleEditClick(vendor)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit Vendor Name"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      
+                      <button 
+                        onClick={() => handleToggleStatus(vendor._id, vendor.isActive)}
+                        disabled={isPending}
+                        className={`p-2 rounded-lg transition-colors ${
+                          vendor.isActive 
+                            ? 'text-red-600 hover:bg-red-50' 
+                            : 'text-green-600 hover:bg-green-50'
+                        }`}
+                        title={vendor.isActive ? "Deactivate Vendor" : "Activate Vendor"}
+                      >
+                        {vendor.isActive ? <UserX size={18} /> : <UserCheck size={18} />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -113,6 +144,48 @@ export default function VendorTable({ vendors }: { vendors: any[] }) {
       <div className="text-xs text-slate-400 text-center pt-2">
         Showing {filteredVendors.length} of {vendors.length} vendors
       </div>
+
+      {/* Edit Modal */}
+      {editingVendor && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-800">Edit Vendor Name</h3>
+              <button 
+                onClick={() => setEditingVendor(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+              placeholder="Enter vendor name"
+              autoFocus
+            />
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                onClick={() => setEditingVendor(null)}
+                className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleUpdate}
+                disabled={isPending || !newName.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              >
+                {isPending ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
