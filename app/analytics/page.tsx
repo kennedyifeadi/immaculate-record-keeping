@@ -4,7 +4,9 @@ import { RevenueTrendChart, VendorRankingChart } from '@/components/analytics/Ch
 import { TrendingUp, Wallet, Users, Calendar } from 'lucide-react';
 
 export default async function AnalyticsPage() {
-  const { monthlyTrends, vendorRankings, kpis } = await getAnalyticsData();
+  const { monthlyTrends, currentMonthRankings, vendorRankings, kpis } = await getAnalyticsData();
+
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
 
   return (
     <div className="space-y-8">
@@ -97,33 +99,93 @@ export default async function AnalyticsPage() {
 
       </div>
 
-      {/* 4. Detailed List (Optional but helpful) */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800">Vendor Performance Breakdown</h3>
-        </div>
-        <table className="w-full text-sm text-left">
-          <thead className="bg-slate-50 text-slate-500 font-semibold">
-            <tr>
-              <th className="px-6 py-4">Rank</th>
-              <th className="px-6 py-4">Vendor Name</th>
-              <th className="px-6 py-4 text-right">Total Sales</th>
-              <th className="px-6 py-4 text-right">Contribution</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {vendorRankings.map((vendor: any, index: number) => (
-              <tr key={index} className="hover:bg-slate-50/50">
-                <td className="px-6 py-4 text-slate-500">#{index + 1}</td>
-                <td className="px-6 py-4 font-medium text-slate-800">{vendor.name}</td>
-                <td className="px-6 py-4 text-right font-medium">₦{vendor.total.toLocaleString()}</td>
-                <td className="px-6 py-4 text-right text-slate-500">
-                  {((vendor.total / kpis.totalRevenue) * 100).toFixed(1)}%
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* 4. Detailed Lists */}
+      <div className="space-y-6">
+        {/* Current Month Ranking */}
+        <details className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group" open>
+          <summary className="p-6 border-b border-slate-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden flex justify-between items-center group-open:bg-slate-50 transition-colors">
+            <h3 className="text-lg font-bold text-slate-800">
+              Current Month Ranking ({currentMonthName})
+            </h3>
+            <span className="transition-transform duration-200 group-open:rotate-180">
+              <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+            </span>
+          </summary>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 text-slate-500 font-semibold">
+                <tr>
+                  <th className="px-6 py-4">Rank</th>
+                  <th className="px-6 py-4">Vendor Name</th>
+                  <th className="px-6 py-4 text-right">Total Sales</th>
+                  <th className="px-6 py-4 text-right">Contribution</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {currentMonthRankings.map((vendor: { name: string; total: number }, index: number) => (
+                  <tr key={index} className="hover:bg-slate-50/50">
+                    <td className="px-6 py-4 text-slate-500">#{index + 1}</td>
+                    <td className="px-6 py-4 font-medium text-slate-800">{vendor.name}</td>
+                    <td className="px-6 py-4 text-right font-medium">₦{vendor.total.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-slate-500">
+                      {kpis.currentMonthSales > 0 ? ((vendor.total / kpis.currentMonthSales) * 100).toFixed(1) : '0.0'}%
+                    </td>
+                  </tr>
+                ))}
+                {currentMonthRankings.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                      No sales recorded for this month yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        {/* Overall Ranking */}
+        <details className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group">
+          <summary className="p-6 border-b border-slate-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden flex justify-between items-center group-open:bg-slate-50 transition-colors">
+            <h3 className="text-lg font-bold text-slate-800">
+              Overall Ranking (Year {kpis.year})
+            </h3>
+            <span className="transition-transform duration-200 group-open:rotate-180">
+              <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+            </span>
+          </summary>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-slate-50 text-slate-500 font-semibold">
+                <tr>
+                  <th className="px-6 py-4">Rank</th>
+                  <th className="px-6 py-4">Vendor Name</th>
+                  <th className="px-6 py-4 text-right">Total Sales</th>
+                  <th className="px-6 py-4 text-right">Contribution</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {vendorRankings.map((vendor: { name: string; total: number }, index: number) => (
+                  <tr key={index} className="hover:bg-slate-50/50">
+                    <td className="px-6 py-4 text-slate-500">#{index + 1}</td>
+                    <td className="px-6 py-4 font-medium text-slate-800">{vendor.name}</td>
+                    <td className="px-6 py-4 text-right font-medium">₦{vendor.total.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-right text-slate-500">
+                      {kpis.totalRevenue > 0 ? ((vendor.total / kpis.totalRevenue) * 100).toFixed(1) : '0.0'}%
+                    </td>
+                  </tr>
+                ))}
+                {vendorRankings.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                      No sales recorded for this year yet.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </div>
 
     </div>

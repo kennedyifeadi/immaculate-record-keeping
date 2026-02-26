@@ -47,12 +47,27 @@ export async function getAnalyticsData() {
   
   const bestMonth = monthlyTrends.reduce((max, curr) => curr.total > max.total ? curr : max, { name: '-', total: 0 });
 
-  // Get current month sales
+  // Get current month sales and rankings
   const currentMonthIndex = new Date().getMonth(); // 0-11
   const currentMonthSales = monthlyTrends[currentMonthIndex]?.total || 0;
 
+  const currentMonthVendorAgg = await Sale.aggregate([
+    { $match: { year: currentYear, month: currentMonthIndex } },
+    { $group: { _id: "$vendor", total: { $sum: "$amount" } } },
+    { $sort: { total: -1 } },
+    { $lookup: { 
+        from: "vendors", 
+        localField: "_id", 
+        foreignField: "_id", 
+        as: "vendorInfo" 
+    }},
+    { $unwind: "$vendorInfo" },
+    { $project: { name: "$vendorInfo.name", total: 1, _id: 0 } } 
+  ]);
+
   return {
     monthlyTrends,
+    currentMonthRankings: currentMonthVendorAgg,
     vendorRankings: vendorAgg, // Now this is a plain list of { name, total }
     kpis: {
       totalRevenue,
