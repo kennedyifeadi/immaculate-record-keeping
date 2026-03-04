@@ -66,8 +66,10 @@ export default async function MonthlyEditPage({
                 currentRank = index + 1;
             }
         }
-        rankings[vendor._id] = index + 1;
+        rankings[vendor._id] = currentRank;
     });
+
+    const totalSales = Object.values(vendorTotals).reduce((sum, val) => sum + val, 0);
 
     return (
         // Layout Fix: Using calc to fill screen minus padding
@@ -87,6 +89,52 @@ export default async function MonthlyEditPage({
                     </p>
                 </div>
             </div>
+
+            {/* ANALYTICS BLOCK */}
+            <details className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden shrink-0 group" open>
+                <summary className="p-4 border-b border-slate-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden flex justify-between items-center group-open:bg-slate-50 transition-colors">
+                    <h3 className="text-lg font-bold text-slate-800">
+                        Monthly Ranking ({monthName})
+                    </h3>
+                    <span className="transition-transform duration-200 group-open:rotate-180 text-slate-400">
+                        <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                    </span>
+                </summary>
+                <div className="overflow-x-auto max-h-[40vh] overflow-y-auto">
+                    <table className="w-full text-sm text-left relative">
+                        <thead className="bg-slate-50 text-slate-500 font-semibold sticky top-0 shadow-[0_1px_2px_rgba(0,0,0,0.05)] z-10">
+                            <tr>
+                                <th className="px-6 py-4">Rank</th>
+                                <th className="px-6 py-4">Vendor Name</th>
+                                <th className="px-6 py-4 text-right">Total Sales</th>
+                                <th className="px-6 py-4 text-right">Contribution</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {sortedVendors.map((vendor) => {
+                                const total = vendorTotals[vendor._id] || 0;
+                                return (
+                                    <tr key={vendor._id} className="hover:bg-slate-50/50">
+                                        <td className="px-6 py-3 text-slate-500">#{rankings[vendor._id]}</td>
+                                        <td className="px-6 py-3 font-medium text-slate-800">{vendor.name}</td>
+                                        <td className="px-6 py-3 text-right font-medium">₦{total.toLocaleString()}</td>
+                                        <td className="px-6 py-3 text-right text-slate-500">
+                                            {totalSales > 0 ? ((total / totalSales) * 100).toFixed(1) : '0.0'}%
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                            {sortedVendors.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                                        No vendors found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </details>
 
             {/* TABLE CONTAINER */}
             <div className="flex-1 border border-slate-200 bg-white rounded-xl shadow-sm overflow-hidden relative">

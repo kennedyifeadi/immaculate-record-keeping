@@ -89,11 +89,17 @@ export default async function AnalyticsPage() {
         {/* Vendor Ranking */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[400px]">
           <div className="mb-6">
-            <h3 className="text-lg font-bold text-slate-800">Top Vendors</h3>
-            <p className="text-sm text-slate-400">Leaderboard by total sales volume</p>
+            <h3 className="text-lg font-bold text-slate-800">Top Vendors ({currentMonthName})</h3>
+            <p className="text-sm text-slate-400">Current month leaderboard by sales volume</p>
           </div>
           <div className="h-[300px]">
-             <VendorRankingChart data={vendorRankings} />
+            {currentMonthRankings.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                    <p>No vendor sales recorded for this month yet.</p>
+                </div>
+            ) : (
+                <VendorRankingChart data={currentMonthRankings} />
+            )}
           </div>
         </div>
 
