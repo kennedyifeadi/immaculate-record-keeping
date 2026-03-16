@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Table2, BarChart3, Users, Calendar } from 'lucide-react';
+import { LayoutDashboard, Table2, BarChart3, Users, Calendar, Settings, Calculator } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const menuItems = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Logger', href: '/logger', icon: Table2 },
+  { name: 'Accounting', href: '/accounting', icon: Calculator },
   { name: 'Monthly', href: '/monthly', icon: Calendar },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Vendors', href: '/vendors', icon: Users }, // List view of vendors
+  { name: 'Vendors', href: '/vendors', icon: Users }, 
+  { name: 'Prices', href: '/price-configuration', icon: Settings },
 ];
 
 export default function Sidebar() {
