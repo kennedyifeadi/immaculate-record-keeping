@@ -23,11 +23,17 @@ export default function PriceConfigClient({ initialProducts }: { initialProducts
     p.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handlePriceChange = (id: string, field: 'costPrice' | 'sellingPrice', value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setProducts(prev => prev.map(p => 
-      p._id === id ? { ...p, [field]: numValue } : p
-    ));
+  const handlePriceChange = (id: string, field: 'name' | 'code' | 'costPrice' | 'sellingPrice', value: string) => {
+    if (field === 'costPrice' || field === 'sellingPrice') {
+      const numValue = parseFloat(value) || 0;
+      setProducts(prev => prev.map(p => 
+        p._id === id ? { ...p, [field]: numValue } : p
+      ));
+    } else {
+      setProducts(prev => prev.map(p => 
+        p._id === id ? { ...p, [field]: value } : p
+      ));
+    }
   };
 
   const handleSaveRow = (id: string) => {
@@ -37,6 +43,8 @@ export default function PriceConfigClient({ initialProducts }: { initialProducts
     setSavingId(id);
     startTransition(async () => {
       const res = await updateProduct(id, {
+        name: product.name,
+        code: product.code,
         costPrice: product.costPrice,
         sellingPrice: product.sellingPrice
       });
@@ -65,7 +73,7 @@ export default function PriceConfigClient({ initialProducts }: { initialProducts
   const isRowDirty = (current: any) => {
     const original = initialProducts.find(p => p._id === current._id);
     if (!original) return false;
-    return current.costPrice !== original.costPrice || current.sellingPrice !== original.sellingPrice;
+    return current.name !== original.name || current.code !== original.code || current.costPrice !== original.costPrice || current.sellingPrice !== original.sellingPrice;
   };
 
   return (
@@ -119,12 +127,20 @@ export default function PriceConfigClient({ initialProducts }: { initialProducts
                 return (
                   <tr key={product._id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-slate-800">
-                      {product.name}
+                      <input 
+                        type="text"
+                        value={product.name}
+                        onChange={(e) => handlePriceChange(product._id, 'name', e.target.value)}
+                        className="w-full px-2 py-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded focus:ring-2 focus:ring-blue-500/20 bg-transparent"
+                      />
                     </td>
                     <td className="px-6 py-4 text-slate-500">
-                      <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-mono">
-                        {product.code}
-                      </span>
+                      <input 
+                        type="text"
+                        value={product.code}
+                        onChange={(e) => handlePriceChange(product._id, 'code', e.target.value.toUpperCase())}
+                        className="w-20 px-2 py-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded font-mono text-xs focus:ring-2 focus:ring-blue-500/20 bg-slate-50 hover:bg-white focus:bg-white"
+                      />
                     </td>
                     <td className="px-6 py-4">
                       <input 
